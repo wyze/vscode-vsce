@@ -36,7 +36,7 @@ function compile() {
 		.pipe(filter('**/api.d.ts'));
 
 	const compiled = result
-		.pipe(filter(['**', '!**/*.d.ts']));
+		.pipe(filter(['**', '**/.*', '!**/*.d.ts']));
 
 	return es.merge(api, compiled)
 		.pipe(gulp.dest('out'));

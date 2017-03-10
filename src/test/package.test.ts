@@ -119,6 +119,32 @@ describe('collect', () => {
 				assert.equal(files.filter(f => /\.vsixmanifest$/.test(f.path)).length, 1);
 			});
 	});
+
+	it('should ignore files in .vscodeignore', () => {
+		const cwd = fixture('vscodeignore');
+
+		return readManifest(cwd)
+			.then(manifest => collect(manifest, { cwd }))
+			.then(files => {
+				assert.equal(files.length, 3);
+				assert.ok(!files.some(f => /\/index\.js$/.test(f.path)));
+				assert.ok(!files.some(f => /\/\.travis\.yml$/.test(f.path)));
+			});
+	});
+
+	it('should only include files in `files` property of manifest', () => {
+		const cwd = fixture('files-property');
+
+		return readManifest(cwd)
+			.then(manifest => collect(manifest, { cwd }))
+			.then(files => {
+        console.log(files);
+				assert.equal(files.length, 4);
+				assert.ok(files.some(f => /\/out\.js$/.test(f.path)));
+				assert.ok(!files.some(f => /\/out\.js\.map$/.test(f.path)));
+				assert.ok(!files.some(f => /\/src\.js$/.test(f.path)));
+			});
+	});
 });
 
 describe('readManifest', () => {

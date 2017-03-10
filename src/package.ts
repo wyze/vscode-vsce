@@ -512,6 +512,10 @@ const defaultIgnore = [
 	'**/*.vsixmanifest'
 ];
 
+const defaultInclude = [
+	'package.json'
+];
+
 function collectAllFiles(cwd: string): Promise<string[]> {
 	return getDependencies(cwd).then(deps => {
 		const promises = deps.map(dep => {
@@ -525,9 +529,33 @@ function collectAllFiles(cwd: string): Promise<string[]> {
 	});
 }
 
-function collectFiles(cwd: string): Promise<string[]> {
+function normalizeInclude(cwd: string, include: string): string {
+	const isNegate = include[0] === '!'
+
+	// if ( isNegate ) {
+	// 	include = include.substr(1)
+	// }
+	console.log('join', path.join(cwd, include))
+	console.log('resolve', path.resolve(cwd, include))
+
+	return include;
+
+	// if ( )
+}
+
+function collectFiles(manifest: Manifest, cwd: string): Promise<string[]> {
 	return collectAllFiles(cwd).then(files => {
 		files = files.filter(f => !/\r$/m.test(f));
+
+		if ( manifest.files && manifest.files.length ) {
+			const includes = defaultInclude.concat(manifest.files);
+			const normalized = includes.map(i => normalizeInclude(cwd, i))
+			const [ include, ignore ] = _.partition(includes, i => !/^\s*!/.test(i));
+			return files.filter(f =>
+				include.some(m => minimatch(f, m, MinimatchOptions)) &&
+				!ignore.some(m => minimatch(f, m.substr(1), MinimatchOptions))
+			);
+		}
 
 		return readFile(path.join(cwd, '.vscodeignore'), 'utf8')
 			.catch<string>(err => err.code !== 'ENOENT' ? Promise.reject(err) : Promise.resolve(''))
@@ -574,7 +602,7 @@ export function collect(manifest: Manifest, options: IPackageOptions = {}): Prom
 	const cwd = options.cwd || process.cwd();
 	const processors = createDefaultProcessors(manifest, options);
 
-	return collectFiles(cwd).then(fileNames => {
+	return collectFiles(manifest, cwd).then(fileNames => {
 		const files = fileNames.map(f => ({ path: `extension/${f}`, localPath: path.join(cwd, f) }));
 
 		return processFiles(processors, files, options);
@@ -636,6 +664,6 @@ export function packageCommand(options: IPackageOptions = {}): Promise<any> {
 export function ls(cwd = process.cwd()): Promise<any> {
 	return readManifest(cwd)
 		.then(manifest => prepublish(cwd, manifest))
-		.then(manifest => collectFiles(cwd))
+		.then(manifest => collectFiles(manifest, cwd))
 		.then(files => files.forEach(f => console.log(`${f}`)));
 }

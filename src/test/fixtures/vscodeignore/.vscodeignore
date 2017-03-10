@@ -1,0 +1,5 @@
+# Source
+src/**
+
+# Build
+.travis.yml

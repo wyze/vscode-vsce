@@ -40,9 +40,9 @@ export interface Manifest {
 	dependencies?: { [name: string]: string; };
 	devDependencies?: { [name: string]: string; };
 	private?: boolean;
+	files?: string[];
 
 	// not supported (npm)
-	// files?: string[];
 	// bin
 	// man
 	// directories
